@@ -1,0 +1,92 @@
+html, body {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: #ffdf87;
+    background-image: radial-gradient(gray 1px, transparent 0);
+    background-size: 30px 30px;
+}
+
+.group {
+    width: 100%;
+    position: absolute;
+    height: 100%;
+}
+
+.connections {
+    z-index: 8;
+}
+
+.blocks {
+    z-index: 9;
+}
+
+.block {
+    position: absolute;
+    z-index: 10;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.block_body {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 5px;
+    height: fit-content;
+}
+
+.block_header {
+    background-color: black;
+    font-weight: bold;
+    color: white;
+    padding: 0.4rem 0.8rem;
+}
+
+.block_main {
+    padding: 0.6rem 0.8rem;
+}
+
+.block_io {
+    width: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.block_dot {
+    margin: 10px 0 10px 0;
+    border: 3px solid black;
+    border-radius: 100%;
+    width: 12px;
+    height: 12px;
+    background-color: white;
+    position: relative;
+}
+
+.label {
+    position: absolute;
+    z-index: 10;
+    top: -20px;
+    left: 15%;
+    font-size: 16px;
+}
+
+.hitbox{
+    background-color: transparent;
+    z-index: 11;
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
