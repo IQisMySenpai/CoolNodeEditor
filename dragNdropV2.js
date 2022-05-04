@@ -96,8 +96,6 @@ class DragNDropAPI {
                 let snap_y = offset.top + (dot.outerHeight()/2);
                 let end_dot_name = dot.find('div.label').text();
                 let line_id = this.get_unique_id();
-                line.finalize(end_node, line_id, start_dot_name, end_dot_name);
-                line.update_end(snap_x, snap_y);
 
                 // =============================================================
                 // +++++ Remove this to have multiple inputs for an output +++++
@@ -108,6 +106,9 @@ class DragNDropAPI {
                     }
                 }
                 // =============================================================
+
+                line.finalize(end_node, line_id, start_dot_name, end_dot_name);
+                line.update_end(snap_x, snap_y);
 
                 start_node.outgoing[start_dot_name].push({ // Adds information to the starting node
                     line: line,
@@ -136,7 +137,7 @@ class DragNDropAPI {
         line.commit_sodoku();
         let start_node = line.start_node;
         let end_node = line.end_node;
-        delete this.nodes[line.line.id];
+        delete this.connections[line.id];
 
         for (let i = 0; i < start_node.outgoing[line.start_dot_name].length; i++) { // Removes line of the start node outgoing
             if (start_node.outgoing[line.start_dot_name][i].line === line) {
@@ -193,6 +194,8 @@ class DragElement { // Drag-able Element
     window_y = 0;
     outgoing = {}; // Link to the outgoing connection and the other node
     incoming = {}; // Link to the incoming connection and the other node
+    outgoing_offsets = {}
+    incoming_offsets = {}
 
     constructor(api, node, inputs, outputs) {
         this.api = api;
@@ -201,11 +204,19 @@ class DragElement { // Drag-able Element
 
         for (let input of inputs) {
             this.incoming[input] = [];
-            this.incoming[input] = [];
         }
 
         for (let output of outputs) {
             this.outgoing[output] = [];
+        }
+
+        // Calculate offset of every dot
+        for (let dot of this.node.find('div.incoming div.block_dot')) {
+            this.calculate_dot_offset(dot, this.incoming_offsets);
+        }
+
+        for (let dot of this.node.find('div.outgoing div.block_dot')) {
+            this.calculate_dot_offset(dot, this.outgoing_offsets);
         }
 
         this.node.find('div.block_header').on('mousedown', {drag_elem: this},function (e) { // If header of window is being started to dragged
@@ -213,13 +224,28 @@ class DragElement { // Drag-able Element
         });
 
         this.node.find('div.outgoing').on('mousedown','div.block_dot', {drag_elem: this},function (e) { // If output node is dragged
-                e.data.drag_elem.line_pickup(e);
+            e.data.drag_elem.line_pickup(e);
         });
+    }
+
+    calculate_dot_offset(dot, offset_var) { // Calculates the difference of a dot
+        dot = $(dot);
+        let label = dot.find('div.label').text();
+        let offset = dot.offset();
+        let x = offset.left + (dot.outerWidth()/2);
+        let y = offset.top + (dot.outerHeight()/2);
+        let rel_x = x - (this.node.offset().left - this.window_x);
+        let rel_y = y - (this.node.offset().top - this.window_y);
+        offset_var[label] = {'x': rel_x,  'y': rel_y}; // Inserts into given offset object
     }
 
     line_pickup(e) { // Line is being started to dragged
         e = e || window.event; // Prevent
         e.preventDefault();
+
+        if ($(e.target).hasClass('label')) { // Stops Move if Label is clicked
+            return;
+        }
 
         if (e.button === 0) { // Check that the left mouse button is pressed
             let dot = $(e.target);
@@ -228,11 +254,12 @@ class DragElement { // Drag-able Element
             let start_x = offset.left + (dot.outerWidth()/2);
             let start_y = offset.top + (dot.outerHeight()/2);
 
-            let line = this.api.add_line(this);
+            let line = this.api.add_line(this); // Creates Line and sets its position
             line.update_start(start_x, start_y);
             line.update_end(e.clientX, e.clientY);
             line.update();
 
+            // Adds Events for moving the mouse and letting go of the button
             $(document).on('mouseup', {drag_elem: this, line_elem: line, dot_name: dot.find('div.label').text()}, function (e) { // Drop the line
                 e.data.drag_elem.line_drop(e);
             });
@@ -242,45 +269,47 @@ class DragElement { // Drag-able Element
         }
     }
 
-    line_move(e) {
+    line_move(e) { // If the Line is moved
         e = e || window.event;
         e.preventDefault();
 
         let line = e.data.line_elem;
 
-        if (e.target.classList.contains('hitbox')) {
+        if (e.target.classList.contains('hitbox')) { // Update the Color if a hitbox is selected
             line.change_color('black');
         } else {
             line.change_color('gray');
         }
 
+        // Updates Endpoint to mouse position
         line.update_end(e.clientX, e.clientY);
         line.update();
     }
 
-    line_drop(e) {
+    line_drop(e) { // If Line is let go
         $(document).off('mousemove');
         $(document).off('mouseup');
 
+        // Does final checks
         this.api.finalize_line(this, $(e.target), e.data.line_elem, e.data.dot_name)
     }
 
-    window_pickup(e) {
+    window_pickup(e) { // Header of a Node is clicked
         e = e || window.event;
         e.preventDefault();
 
         this.mouse_offset_x = e.clientX;
         this.mouse_offset_y = e.clientY;
 
-        $(document).on('mouseup', {drag_elem: this}, function (e) {
+        $(document).on('mouseup', {drag_elem: this}, function (e) { // Window is let go
             e.data.drag_elem.window_drop(e);
         });
-        $(document).on('mousemove', {drag_elem: this}, function (e) {
+        $(document).on('mousemove', {drag_elem: this}, function (e) { // Window is moved
             e.data.drag_elem.window_move(e);
         });
     }
 
-    window_move(e) {
+    window_move(e) { // Window is moved
         e = e || window.event;
         e.preventDefault();
 
@@ -289,55 +318,50 @@ class DragElement { // Drag-able Element
         this.mouse_offset_x = e.clientX;
         this.mouse_offset_y = e.clientY;
 
-        this.node.css('top', (this.node.offset().top - this.window_y) + "px");
-        this.node.css('left', (this.node.offset().left - this.window_x) + "px");
+        let node_x = this.node.offset().left - this.window_x;
+        let node_y = this.node.offset().top - this.window_y;
 
+        this.node.css('top', node_y + "px");
+        this.node.css('left', node_x + "px");
 
-        for (let dot of this.node.find('div.incoming div.block_dot')) {
-            dot = $(dot);
-            let label = dot.find('div.label').text();
-            if (this.incoming[label].length > 0){
-                let offset = dot.offset();
-                let end_x = offset.left + (dot.outerWidth()/2);
-                let end_y = offset.top + (dot.outerHeight()/2);
-                for (let i = 0; i < this.incoming[label].length; i++) {
-                    let line = this.incoming[label][i].line;
-
-                    line.update_end(end_x, end_y);
-                    line.update();
+        // Updates position of connected lines
+        for (let input in this.incoming) {
+            let incomingElement = this.incoming[input];
+            if (incomingElement.length > 0) {
+                let x = node_x + this.incoming_offsets[input].x;
+                let y = node_y + this.incoming_offsets[input].y;
+                for (let i = 0; i < incomingElement.length; i++) {
+                    incomingElement[i].line.update_end(x, y);
+                    incomingElement[i].line.update();
                 }
             }
         }
 
-        for (let dot of this.node.find('div.outgoing div.block_dot')) {
-            dot = $(dot);
-            let label = dot.find('div.label').text();
-            if (this.outgoing[label].length > 0){
-                let offset = dot.offset();
-                let start_x = offset.left + (dot.outerWidth()/2);
-                let start_y = offset.top + (dot.outerHeight()/2);
-                for (let i = 0; i < this.outgoing[label].length; i++) {
-                    let line = this.outgoing[label][i].line;
-
-                    line.update_start(start_x, start_y);
-                    line.update();
+        for (let output in this.outgoing) {
+            let outgoingElement = this.outgoing[output];
+            if (outgoingElement.length > 0) {
+                let x = node_x + this.outgoing_offsets[output].x;
+                let y = node_y + this.outgoing_offsets[output].y;
+                for (let i = 0; i < outgoingElement.length; i++) {
+                    outgoingElement[i].line.update_start(x, y);
+                    outgoingElement[i].line.update();
                 }
             }
         }
     }
 
-    window_drop(e) {
+    window_drop(e) { // Window is droped
         $(document).off('mousemove');
         $(document).off('mouseup');
     }
 
-    remove_incoming(dot_name) {
+    remove_incoming(dot_name) { // Removes Incoming Connection
         for (let connection of this.incoming[dot_name]) {
             this.api.remove_line(connection.line);
         }
     }
 
-    remove_outgoing(dot_name) {
+    remove_outgoing(dot_name) { // Removes Outgoing Connection
         for (let connection of this.outgoing[dot_name]) {
             this.api.remove_line(connection.line);
         }
@@ -357,24 +381,24 @@ class Connection {
     end_y = 0;
     path;
 
-    constructor(api, start_node, path) {
+    constructor(api, start_node, path) { // Creates Connection
         this.api = api;
         this.start_node = start_node;
         this.path = path;
 
     }
 
-    update_start(x, y) {
+    update_start(x, y) { // Updates Startpoint
         this.start_x = x;
         this.start_y = y;
     }
 
-    update_end(x, y) {
+    update_end(x, y) { // Updates EndPoint
         this.end_x = x;
         this.end_y = y;
     }
 
-    update() {
+    update() { // Updates the Line
         let position = 'M ' + this.start_x + ',' + this.start_y; // Start Point
         let dist = Math.abs(this.end_x - this.start_x)
         if (dist < 150) {
@@ -391,7 +415,7 @@ class Connection {
         this.path.setAttribute('d', position)
     }
 
-    finalize(end_node, id, start_dot_name, end_dot_name) {
+    finalize(end_node, id, start_dot_name, end_dot_name) { // Finalize the Line by saving important data
         this.end_node = end_node;
         this.start_dot_name = start_dot_name;
         this.end_dot_name = end_dot_name;
@@ -399,11 +423,16 @@ class Connection {
         this.path.setAttribute('id', id);
     }
 
-    commit_sodoku() {
+    commit_sodoku() { // Commits Sodoku
         this.path.remove();
     }
 
-    change_color(color) {
+    change_color(color) { // Changes Color of the Line
         this.path.setAttribute('stroke', color);
     }
 }
+
+dnd = new DragNDropAPI();
+
+dnd.add_block('Header', 'Really Cool', [], ['A', 'B', 'C'])
+dnd.add_block('Header', 'Really Cool', ['A', 'B'], [])
