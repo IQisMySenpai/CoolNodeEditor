@@ -5,6 +5,7 @@
 1. [About The Project](#about-the-project)
    - [Built With](#built-with)
 2. [Examples](#examples)
+3. [TO-DO](#to-do)
 
 ## About The Project
 
@@ -43,3 +44,8 @@ dnd.add_block('Node Header', 'Wow this Node is really cool', ['A', 'B', 'C'], ['
 ```js
 let data = dnd.export_nodes();
 ```
+
+## TO-DO
+- [X] New Nodes Need to spawn in center of screen
+- [ ] Expandable Screen
+- [ ] Import of Export

@@ -10,7 +10,7 @@ class DragNDropAPI {
         this.connection_editor = document.getElementsByClassName('connections')[0];
     }
 
-    add_block(header, main, inputs, outputs, id = null) {
+    add_block(header, main, inputs, outputs, id = null, spawn_x = null, spawn_y = null) {
         id = this.get_unique_id(id);
 
         let html = '<div class="block" id="' + id + '">'; // Starts the html collection
@@ -45,12 +45,25 @@ class DragNDropAPI {
 
         let node = $(html);
         this.node_editor.append(node);
+
+        this.update_position(node, spawn_x, spawn_y);
+
         let drag = new DragElement(this, node, inputs, outputs);
         this.nodes[id] = drag;
 
         node.find('div.incoming').on('dblclick', 'div.block_dot', {drag_elem: drag}, function (e) {
             e.data.drag_elem.remove_incoming($(this).find('div.label').text());
         });
+    }
+
+    update_position (node, x = null, y = null) {
+        if (x === null || y === null) {
+            node.css('left', (((window.innerWidth / 2) + document.body.scrollLeft) - (node.width() / 2)) + "px");
+            node.css('top', (((window.innerHeight / 2) + document.body.scrollLeft) - (node.height() / 2)) + "px");
+        }
+
+        node.css('left', x + "px");
+        node.css('top', y + "px");
     }
 
     get_block (id) { // Returns the Block Object
@@ -236,7 +249,7 @@ class DragElement { // Drag-able Element
         let y = offset.top + (dot.outerHeight()/2);
         let rel_x = x - (this.node.offset().left - this.window_x);
         let rel_y = y - (this.node.offset().top - this.window_y);
-        offset_var[label] = {'x': rel_x,  'y': rel_y}; // Inserts into given offset object
+        offset_var[label] = {x: rel_x,  y: rel_y}; // Inserts into given offset object
     }
 
     line_pickup(e) { // Line is being started to dragged
@@ -320,6 +333,14 @@ class DragElement { // Drag-able Element
 
         let node_x = this.node.offset().left - this.window_x;
         let node_y = this.node.offset().top - this.window_y;
+
+        /*let body = $(document.body)
+
+        if (body.width() - 200 < node_x) {
+            console.log(body.width());
+            body.css('width', (body.width() + 200) + 'px')
+            console.log(body.width());
+        }*/
 
         this.node.css('top', node_y + "px");
         this.node.css('left', node_x + "px");

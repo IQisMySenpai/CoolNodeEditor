@@ -1,4 +1,4 @@
-html, body {
+html {
     height: 100%;
     overflow: hidden;
     margin: 0;
@@ -10,6 +10,9 @@ body {
     background: #ffdf87;
     background-image: radial-gradient(gray 1px, transparent 0);
     background-size: 30px 30px;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .group {
