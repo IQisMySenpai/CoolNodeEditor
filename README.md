@@ -47,5 +47,5 @@ let data = dnd.export_nodes();
 
 ## TO-DO
 - [X] New Nodes Need to spawn in center of screen
-- [ ] Expandable Screen
+- [X] Expandable Screen
 - [ ] Import of Export

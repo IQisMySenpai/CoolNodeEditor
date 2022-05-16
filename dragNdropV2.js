@@ -58,8 +58,8 @@ class DragNDropAPI {
 
     update_position (node, x = null, y = null) {
         if (x === null || y === null) {
-            node.css('left', (((window.innerWidth / 2) + document.body.scrollLeft) - (node.width() / 2)) + "px");
-            node.css('top', (((window.innerHeight / 2) + document.body.scrollLeft) - (node.height() / 2)) + "px");
+            node.css('left', (((window.innerWidth / 2) + $(document).scrollLeft()) - (node.width() / 2)) + "px");
+            node.css('top', (((window.innerHeight / 2) + $(document).scrollTop()) - (node.height() / 2)) + "px");
         }
 
         node.css('left', x + "px");
@@ -203,17 +203,21 @@ class DragElement { // Drag-able Element
     id; // ID of the element
     mouse_offset_x = 0;
     mouse_offset_y = 0;
+    width = 0;
+    height = 0;
     node_x = 0;
     node_y = 0;
     outgoing = {}; // Link to the outgoing connection and the other node
     incoming = {}; // Link to the incoming connection and the other node
-    outgoing_offsets = {}
-    incoming_offsets = {}
+    outgoing_offsets = {};
+    incoming_offsets = {};
 
     constructor(api, node, inputs, outputs) {
         this.api = api;
         this.node = node;
         this.id = node.attr('id');
+        this.width = node.outerWidth();
+        this.height = node.outerHeight();
 
         for (let input of inputs) {
             this.incoming[input] = [];
@@ -272,7 +276,7 @@ class DragElement { // Drag-able Element
 
             let line = this.api.add_line(this); // Creates Line and sets its position
             line.update_start(start_x, start_y);
-            line.update_end(e.clientX, e.clientY);
+            line.update_end(e.pageX, e.pageY);
             line.update();
 
             // Adds Events for moving the mouse and letting go of the button
@@ -298,7 +302,8 @@ class DragElement { // Drag-able Element
         }
 
         // Updates Endpoint to mouse position
-        line.update_end(e.clientX, e.clientY);
+        console.log()
+        line.update_end(e.pageX, e.pageY);
         line.update();
     }
 
@@ -333,7 +338,40 @@ class DragElement { // Drag-able Element
 
 
         this.node_x = e.clientX - this.mouse_offset_x;
-        this.node_y =  e.clientY - this.mouse_offset_y;;
+        this.node_y =  e.clientY - this.mouse_offset_y;
+
+
+        let d = $(document);
+        let b = $(document.body);
+        let w = $(window)
+
+        while (this.node_x + (this.width * 1.3) - d.scrollLeft() > w.width()) {
+            if (this.node_x + (this.width * 1.3) > b.width()) {
+                b.width(b.width() + 3);
+            }
+            d.scrollLeft(d.scrollLeft() + 3);
+            this.mouse_offset_x -= 3;
+        }
+
+        while (this.node_y + (this.height * 1.3) - d.scrollTop() > w.height()) {
+            if (this.node_y + (this.height * 1.3) > b.height()) {
+                b.height(b.height() + 3);
+            }
+            d.scrollTop(d.scrollTop() + 3);
+            this.mouse_offset_y -= 3;
+        }
+
+        let min_width = this.width * 0.3;
+        while (d.scrollLeft() > min_width && this.node_x - d.scrollLeft() < min_width) {
+            d.scrollLeft(d.scrollLeft() - 3);
+            this.mouse_offset_x += 3;
+        }
+
+        let min_height = this.height * 0.3;
+        while (d.scrollTop() > min_height && this.node_y - d.scrollTop() < min_height) {
+            d.scrollTop(d.scrollTop() - 3);
+            this.mouse_offset_y += 3;
+        }
 
         if (this.node_x < 0) {
             this.node_x = 0;
@@ -463,7 +501,11 @@ class Connection {
     }
 }
 
-dnd = new DragNDropAPI();
+var dnd;
 
-dnd.add_block('Header', 'Really Cool', [], ['A', 'B', 'C'])
-dnd.add_block('Header', 'Really Cool', ['A', 'B'], [])
+setTimeout(function(){
+    dnd = new DragNDropAPI();
+
+    dnd.add_block('Header', 'Really Cool', [], ['A', 'B', 'C'])
+    dnd.add_block('Header', 'Really Cool', ['A', 'B'], [])
+}, 50);
