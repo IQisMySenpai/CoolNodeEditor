@@ -1,9 +1,10 @@
 html {
-    height: 100%;
-    overflow: hidden;
+    height: 5000px;
+    overflow: auto;
     margin: 0;
     padding: 0;
     font-family: Arial, Helvetica, sans-serif;
+    width: 5000px;
 }
 
 body {
@@ -13,12 +14,14 @@ body {
     overflow: auto;
     margin: 0;
     padding: 0;
+    width: 5000px;
+    height: 5000px;
 }
 
 .group {
-    width: 100%;
+    width: inherit;
+    height: inherit;
     position: absolute;
-    height: 100%;
 }
 
 .connections {
@@ -52,6 +55,11 @@ body {
     font-weight: bold;
     color: white;
     padding: 0.4rem 0.8rem;
+    cursor: grab;
+}
+
+.moving {
+    cursor: grabbing !important;
 }
 
 .block_main {
@@ -75,6 +83,11 @@ body {
     background-color: white;
     position: relative;
 }
+
+.outgoing > .block_dot {
+    cursor: pointer;
+}
+
 
 .label {
     position: absolute;

@@ -203,8 +203,8 @@ class DragElement { // Drag-able Element
     id; // ID of the element
     mouse_offset_x = 0;
     mouse_offset_y = 0;
-    window_x = 0;
-    window_y = 0;
+    node_x = 0;
+    node_y = 0;
     outgoing = {}; // Link to the outgoing connection and the other node
     incoming = {}; // Link to the incoming connection and the other node
     outgoing_offsets = {}
@@ -222,6 +222,9 @@ class DragElement { // Drag-able Element
         for (let output of outputs) {
             this.outgoing[output] = [];
         }
+
+        this.node_x = this.node.offset().left;
+        this.node_y = this.node.offset().top;
 
         // Calculate offset of every dot
         for (let dot of this.node.find('div.incoming div.block_dot')) {
@@ -247,8 +250,8 @@ class DragElement { // Drag-able Element
         let offset = dot.offset();
         let x = offset.left + (dot.outerWidth()/2);
         let y = offset.top + (dot.outerHeight()/2);
-        let rel_x = x - (this.node.offset().left - this.window_x);
-        let rel_y = y - (this.node.offset().top - this.window_y);
+        let rel_x = x - this.node_x;
+        let rel_y = y - this.node_y;
         offset_var[label] = {x: rel_x,  y: rel_y}; // Inserts into given offset object
     }
 
@@ -311,8 +314,10 @@ class DragElement { // Drag-able Element
         e = e || window.event;
         e.preventDefault();
 
-        this.mouse_offset_x = e.clientX;
-        this.mouse_offset_y = e.clientY;
+        this.node.find('div.block_header').toggleClass('moving');
+
+        this.mouse_offset_x = e.clientX - this.node.offset().left;
+        this.mouse_offset_y = e.clientY - this.node.offset().top;
 
         $(document).on('mouseup', {drag_elem: this}, function (e) { // Window is let go
             e.data.drag_elem.window_drop(e);
@@ -326,13 +331,17 @@ class DragElement { // Drag-able Element
         e = e || window.event;
         e.preventDefault();
 
-        this.window_x = this.mouse_offset_x - e.clientX;
-        this.window_y = this.mouse_offset_y - e.clientY;
-        this.mouse_offset_x = e.clientX;
-        this.mouse_offset_y = e.clientY;
 
-        let node_x = this.node.offset().left - this.window_x;
-        let node_y = this.node.offset().top - this.window_y;
+        this.node_x = e.clientX - this.mouse_offset_x;
+        this.node_y =  e.clientY - this.mouse_offset_y;;
+
+        if (this.node_x < 0) {
+            this.node_x = 0;
+        }
+
+        if (this.node_y < 0) {
+            this.node_y = 0;
+        }
 
         /*let body = $(document.body)
 
@@ -342,15 +351,15 @@ class DragElement { // Drag-able Element
             console.log(body.width());
         }*/
 
-        this.node.css('top', node_y + "px");
-        this.node.css('left', node_x + "px");
+        this.node.css('top', this.node_y + "px");
+        this.node.css('left', this.node_x + "px");
 
         // Updates position of connected lines
         for (let input in this.incoming) {
             let incomingElement = this.incoming[input];
             if (incomingElement.length > 0) {
-                let x = node_x + this.incoming_offsets[input].x;
-                let y = node_y + this.incoming_offsets[input].y;
+                let x = this.node_x + this.incoming_offsets[input].x;
+                let y = this.node_y + this.incoming_offsets[input].y;
                 for (let i = 0; i < incomingElement.length; i++) {
                     incomingElement[i].line.update_end(x, y);
                     incomingElement[i].line.update();
@@ -361,8 +370,8 @@ class DragElement { // Drag-able Element
         for (let output in this.outgoing) {
             let outgoingElement = this.outgoing[output];
             if (outgoingElement.length > 0) {
-                let x = node_x + this.outgoing_offsets[output].x;
-                let y = node_y + this.outgoing_offsets[output].y;
+                let x = this.node_x + this.outgoing_offsets[output].x;
+                let y = this.node_y + this.outgoing_offsets[output].y;
                 for (let i = 0; i < outgoingElement.length; i++) {
                     outgoingElement[i].line.update_start(x, y);
                     outgoingElement[i].line.update();
@@ -372,6 +381,7 @@ class DragElement { // Drag-able Element
     }
 
     window_drop(e) { // Window is droped
+        this.node.find('div.block_header').toggleClass('moving');
         $(document).off('mousemove');
         $(document).off('mouseup');
     }
