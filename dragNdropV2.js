@@ -121,6 +121,7 @@ class DragNDropAPI {
                 // =============================================================
 
                 line.finalize(end_node, line_id, start_dot_name, end_dot_name);
+                line.change_color('black');
                 line.update_end(snap_x, snap_y);
 
                 start_node.outgoing[start_dot_name].push({ // Adds information to the starting node
@@ -165,8 +166,8 @@ class DragNDropAPI {
         }
     }
 
-    export_nodes () { // Exports all the nodes
-        let data = {};
+    export_nodes (as_json = false) { // Exports all the nodes
+        let nodes = {};
         for (let id in this.nodes) {
             let node = this.nodes[id];
 
@@ -176,24 +177,94 @@ class DragNDropAPI {
             for (let dot in node.outgoing) {
                 outgoing[dot] = [];
                 for (let connection of node.outgoing[dot]) {
-                    outgoing[dot].push(connection.end_node.id);
+                    outgoing[dot].push({
+                        end_id: connection.end_node.id,
+                        end_dot: connection.line.end_dot_name
+                    });
                 }
             }
 
             for (let dot in node.incoming) {
                 incoming[dot] = [];
                 for (let connection of node.incoming[dot]) {
-                    incoming[dot].push(connection.start_node.id);
+                    incoming[dot].push({
+                        start_id: connection.start_node.id,
+                        start_dot: connection.line.start_dot_name
+                    });
                 }
             }
 
-            data[node.id] = {
+            nodes[node.id] = {
+                x: node.node_x,
+                y: node.node_y,
+                header: node.node.find('div.block_header').html(),
+                main: node.node.find('div.block_main').html(),
                 incoming: incoming,
                 outgoing: outgoing
             }
         }
 
+        let b = $(document.body)
+
+        let data = {
+            nodes: nodes,
+            meta: {
+                width: b.width(),
+                height: b.height()
+            }
+        }
+
+        if (as_json) {
+            return JSON.stringify(data);
+        }
+
         return data;
+    }
+
+    import_nodes (data, import_meta = true) {
+        if (typeof data == 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch (e) {
+                console.error('Invalid JSON input into import_nodes.');
+                return;
+            }
+        }
+
+        let meta = data.meta;
+        let nodes = data.nodes;
+        let w = $(window);
+        let d = $(document.body);
+
+        if (import_meta) {
+            if (w.width < meta.width) {
+                d.width(meta.width);
+            }
+            if (w.height < meta.height) {
+                d.height(meta.height);
+            }
+        }
+
+        for (let id in nodes) {
+            this.add_block(nodes[id].header, nodes[id].main, Object.keys(nodes[id].incoming), Object.keys(nodes[id].outgoing), id, nodes[id].x, nodes[id].y)
+        }
+
+        for (let id in nodes) {
+            let object = nodes[id];
+            for (let dot_label in object.outgoing) {
+                let node = this.get_block(id);
+                for (let i = 0; i < object.outgoing[dot_label].length; i++) {
+                    let line = this.add_line();
+                    line.update_start(object.x + node.outgoing_offsets[dot_label].x, object.y + node.outgoing_offsets[dot_label].y);
+                    this.finalize_line(
+                        node,
+                        this.get_block(object.outgoing[dot_label][i].end_id).node.find('div.hitbox'),
+                        line,
+                        dot_label
+                    );
+                }
+            }
+        }
     }
 }
 
@@ -211,6 +282,8 @@ class DragElement { // Drag-able Element
     incoming = {}; // Link to the incoming connection and the other node
     outgoing_offsets = {};
     incoming_offsets = {};
+    outgoing_dots = {};
+    incoming_dots = {};
 
     constructor(api, node, inputs, outputs) {
         this.api = api;
@@ -232,11 +305,11 @@ class DragElement { // Drag-able Element
 
         // Calculate offset of every dot
         for (let dot of this.node.find('div.incoming div.block_dot')) {
-            this.calculate_dot_offset(dot, this.incoming_offsets);
+            this.dot_initialization(dot, this.incoming_offsets, this.incoming_dots);
         }
 
         for (let dot of this.node.find('div.outgoing div.block_dot')) {
-            this.calculate_dot_offset(dot, this.outgoing_offsets);
+            this.dot_initialization(dot, this.outgoing_offsets, this.outgoing_dots);
         }
 
         this.node.find('div.block_header').on('mousedown', {drag_elem: this},function (e) { // If header of window is being started to dragged
@@ -248,7 +321,7 @@ class DragElement { // Drag-able Element
         });
     }
 
-    calculate_dot_offset(dot, offset_var) { // Calculates the difference of a dot
+    dot_initialization(dot, offset_var, dots) { // Calculates the difference of a dot
         dot = $(dot);
         let label = dot.find('div.label').text();
         let offset = dot.offset();
@@ -256,6 +329,7 @@ class DragElement { // Drag-able Element
         let y = offset.top + (dot.outerHeight()/2);
         let rel_x = x - this.node_x;
         let rel_y = y - this.node_y;
+        dots[label] = dot;
         offset_var[label] = {x: rel_x,  y: rel_y}; // Inserts into given offset object
     }
 
@@ -345,16 +419,18 @@ class DragElement { // Drag-able Element
         let b = $(document.body);
         let w = $(window)
 
-        while (this.node_x + (this.width * 1.3) - d.scrollLeft() > w.width()) {
-            if (this.node_x + (this.width * 1.3) > b.width()) {
+        let max_width = this.width * 1.3;
+        while (this.node_x + max_width - d.scrollLeft() > w.width()) {
+            if (this.node_x + max_width > b.width()) {
                 b.width(b.width() + 3);
             }
             d.scrollLeft(d.scrollLeft() + 3);
             this.mouse_offset_x -= 3;
         }
 
-        while (this.node_y + (this.height * 1.3) - d.scrollTop() > w.height()) {
-            if (this.node_y + (this.height * 1.3) > b.height()) {
+        let max_height = this.height * 1.3;
+        while (this.node_y + max_height - d.scrollTop() > w.height()) {
+            if (this.node_y + max_height > b.height()) {
                 b.height(b.height() + 3);
             }
             d.scrollTop(d.scrollTop() + 3);
@@ -454,7 +530,6 @@ class Connection {
         this.api = api;
         this.start_node = start_node;
         this.path = path;
-
     }
 
     update_start(x, y) { // Updates Startpoint
@@ -506,6 +581,5 @@ var dnd;
 setTimeout(function(){
     dnd = new DragNDropAPI();
 
-    dnd.add_block('Header', 'Really Cool', [], ['A', 'B', 'C'])
-    dnd.add_block('Header', 'Really Cool', ['A', 'B'], [])
+    dnd.import_nodes("{\"nodes\":{\"input\":{\"x\":381.78125,\"y\":404.015625,\"header\":\"Input\",\"main\":\"Really Cool Input\",\"incoming\":{},\"outgoing\":{\"I\":[{\"end_id\":\"output\",\"end_dot\":\"O\"}]}},\"output\":{\"x\":820.546875,\"y\":192.015625,\"header\":\"Output\",\"main\":\"Really Cool Output\",\"incoming\":{\"O\":[{\"start_id\":\"input\",\"start_dot\":\"I\"}]},\"outgoing\":{}}},\"meta\":{\"width\":1440,\"height\":354}}")
 }, 50);
