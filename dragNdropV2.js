@@ -575,11 +575,3 @@ class Connection {
         this.path.setAttribute('stroke', color);
     }
 }
-
-var dnd;
-
-setTimeout(function(){
-    dnd = new DragNDropAPI();
-
-    dnd.import_nodes("{\"nodes\":{\"input\":{\"x\":381.78125,\"y\":404.015625,\"header\":\"Input\",\"main\":\"Really Cool Input\",\"incoming\":{},\"outgoing\":{\"I\":[{\"end_id\":\"output\",\"end_dot\":\"O\"}]}},\"output\":{\"x\":820.546875,\"y\":192.015625,\"header\":\"Output\",\"main\":\"Really Cool Output\",\"incoming\":{\"O\":[{\"start_id\":\"input\",\"start_dot\":\"I\"}]},\"outgoing\":{}}},\"meta\":{\"width\":1440,\"height\":354}}")
-}, 50);
