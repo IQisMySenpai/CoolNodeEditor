@@ -194,9 +194,32 @@ class DragNDropAPI {
                 }
             }
 
+            let inputs = $(node.node).find('input,select');
+
+            let input;
+
+            let values = {};
+
+            for(let i = 0; i < inputs.length; i++) {
+                input = $(inputs[i]);
+                if (input.prop('tagName') === 'SELECT') {
+                    values[input.attr('name')] = input.find('option:selected').val();
+                } else {
+                    switch (input.attr('type')) {
+                        case 'checkbox':
+                        case 'radio':
+                            values[input.attr('name')] = input.prop("checked");
+                            break;
+                        default:
+                            values[input.attr('name')] = input.val();
+                    }
+                }
+            }
+
             nodes[node.id] = {
                 x: node.node_x,
                 y: node.node_y,
+                values: values,
                 header: node.node.find('div.block_header').html(),
                 main: node.node.find('div.block_main').html(),
                 incoming: incoming,

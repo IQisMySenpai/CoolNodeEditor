@@ -39,10 +39,23 @@ The addblock has following parameters:
 dnd.add_block('Node Header', 'Wow this Node is really cool', ['A', 'B', 'C'], ['S', 'T']);
 ```
 
-### Getting a export
+### Getting an export
+Exporting Nodes can be either done as json or a js object. It has the following parameters:
+- *as_json:* Selects if you want to export it as json. Default is false.
 
 ```js
 let data = dnd.export_nodes();
+```
+
+### Importing a previous save 
+Nodes are imported either as json or a js object. With following parameters has the following parameters:
+- *data:* Data that you want to import either as json or a js object.
+- *import_meta:* Selects if you want to import meta data. Default is true.
+
+```js
+let data = dnd.export_nodes(); // Export as Object
+
+dnd.import_nodes(data);
 ```
 
 ## TO-DO

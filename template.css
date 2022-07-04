@@ -5,6 +5,7 @@ html {
     font-family: Arial, Helvetica, sans-serif;
     width: 100%;
     height: 100%;
+    font-size: 1rem;
 }
 
 body {
@@ -64,6 +65,28 @@ body {
 
 .block_main {
     padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.block_main label {
+    margin: 0.5rem 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.block_main select {
+    font-size: 1rem;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 0.1rem 0.4rem;
+}
+
+.block_main input{
+    font-size: 1rem;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
 }
 
 .block_io {
@@ -88,13 +111,12 @@ body {
     cursor: pointer;
 }
 
-
 .label {
     position: absolute;
     z-index: 10;
     top: -20px;
     left: 15%;
-    font-size: 16px;
+    font-size: 1rem;
 }
 
 .hitbox{
