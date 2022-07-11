@@ -399,7 +399,6 @@ class DragElement { // Drag-able Element
         }
 
         // Updates Endpoint to mouse position
-        console.log()
         line.update_end(e.pageX, e.pageY);
         line.update();
     }
@@ -479,14 +478,6 @@ class DragElement { // Drag-able Element
         if (this.node_y < 0) {
             this.node_y = 0;
         }
-
-        /*let body = $(document.body)
-
-        if (body.width() - 200 < node_x) {
-            console.log(body.width());
-            body.css('width', (body.width() + 200) + 'px')
-            console.log(body.width());
-        }*/
 
         this.node.css('top', this.node_y + "px");
         this.node.css('left', this.node_x + "px");
