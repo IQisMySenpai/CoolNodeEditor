@@ -9,7 +9,7 @@ html {
 }
 
 body {
-    background: #ffdf87;
+    background: rgb(200, 200, 255);
     background-image: radial-gradient(gray 1px, transparent 0);
     background-size: 30px 30px;
     overflow: auto;
@@ -115,8 +115,12 @@ body {
     position: absolute;
     z-index: 10;
     top: -20px;
-    left: 15%;
+    right: 15%;
     font-size: 1rem;
+}
+
+.outgoing .label {
+    left: 15% !important;
 }
 
 .hitbox{
@@ -127,4 +131,15 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+}
+
+.block_body input, .block_body select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 5px;
+
 }
